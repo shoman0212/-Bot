@@ -1,70 +1,43 @@
-# ====== fetcher.py ======
-import yfinance as yf
+📈 株価取得Bot（米国株 / Yahoo Finance API）
 
-def fetch_stock_data(ticker, period="2d", interval="1d"):
-    data = yf.download(ticker, period=period, interval=interval)
-    return data
+---
 
+### 概要
 
-# ====== plotter.py ======
-import matplotlib.pyplot as plt
-import os
-import pandas as pd
+米国株（例：SMCI, AAPL など）の株価データを自動で取得し、  
+日々のデータをCSVに保存＆チャート化するPython製Botです。  
+データ収集・記録・チャート描画・自動更新に対応し、トレードの振り返りや可視化にも活用できます。
 
+---
 
-def save_closing_price_chart(data, ticker, output_dir):
-    plt.figure(figsize=(8, 4))
-    plt.plot(data.index, data['Close'], marker='o', label="Close Price")
+### 使用技術
 
-    # 移動平均線（5日）を追加（条件：データが5日以上ある場合）
-    if len(data) >= 5:
-        data['SMA_5'] = data['Close'].rolling(window=5).mean()
-        plt.plot(data.index, data['SMA_5'], linestyle='--', label="5-Day SMA")
+- Python（requests, pandas, yfinance, matplotlib）
+- スケジューリング（cron / Task Scheduler）
+- ファイル出力・ログ管理（CSV / JSON / PNG）
 
-    plt.title(f"{ticker} - Closing Prices")
-    plt.xlabel("Date")
-    plt.ylabel("Price (USD)")
-    plt.grid(True)
-    plt.legend()
+---
 
-    chart_path = os.path.join(output_dir, f"{ticker}_chart.png")
-    plt.savefig(chart_path)
-    plt.close()
-    return chart_path
+### 機能
 
+- 任意の銘柄の株価（始値 / 終値 / 高値 / 安値 / 出来高）を取得
+- 毎日定時にデータを自動取得・保存（CSV形式、日付ごと）
+- 各銘柄の終値を折れ線グラフでチャート化（PNG出力）
+- 自動でフォルダ分け＆日付タグ付き保存
+- 複数銘柄を一括取得に対応（例：AAPL, SMCI, NVDA など）
 
-# ====== main.py ======
-import pandas as pd
-from datetime import datetime
-import os
+---
 
-from fetcher import fetch_stock_data
-from plotter import save_closing_price_chart
+### 今後の拡張予定
 
-# ====== 設定 ======
-tickers = ["SMCI", "AAPL", "NVDA"]
-base_dir = "stock_data"
+- LINEやSlackへの通知連携
+- テクニカル指標（移動平均・RSIなど）の自動計算
+- トレード日記との連携（取引履歴との統合）
 
-today = datetime.today().strftime('%Y-%m-%d')
-output_dir = os.path.join(base_dir, today)
-os.makedirs(output_dir, exist_ok=True)
+---
 
-# ====== 処理 ======
-for ticker in tickers:
-    try:
-        data = fetch_stock_data(ticker, period="7d")  # SMAのために7日分取得
-        if data.empty:
-            print(f"No data for {ticker}")
-            continue
+### リンク
 
-        latest = data.tail(1)
-        latest.reset_index(inplace=True)
-        csv_path = os.path.join(output_dir, f"{ticker}.csv")
-        latest.to_csv(csv_path, index=False)
+- [GitHubリポジトリURL]
+- [Qiita / note 解説記事リンク]
 
-        save_closing_price_chart(data, ticker, output_dir)
-
-        print(f"Saved {ticker} data and chart.")
-
-    except Exception as e:
-        print(f"Error with {ticker}: {e}")
